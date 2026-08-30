@@ -1,0 +1,52 @@
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
+import { aiAnalyses } from "../../drizzle/schema";
+import { appendAuditLog, getDb } from "../db";
+import { adminProcedure, router } from "../_core/trpc";
+
+const analysisPayload = z.object({
+  title: z.string().min(1).max(180),
+  summary: z.string().min(1).max(4000),
+  sections: z.array(z.object({ heading: z.string().min(1).max(180), body: z.string().min(1).max(8000) })).min(1).max(20),
+  generatedAt: z.string().optional(),
+  model: z.string().max(120).optional(),
+}).strict();
+
+export function validateAnalysisPayload(value: unknown) {
+  return analysisPayload.safeParse(value);
+}
+
+export const analysesRouter = router({
+  upload: adminProcedure.input(z.object({
+    studentId: z.number().int().positive(),
+    semesterId: z.number().int().positive().optional(),
+    payloadJson: z.string().min(2),
+  })).mutation(async ({ ctx, input }) => {
+    const parsed = validateAnalysisPayload(JSON.parse(input.payloadJson));
+    if (!parsed.success) throw new Error("Analysis payload must include a title, summary, and structured sections.");
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+    const inserted = await db.insert(aiAnalyses).values({ studentId: input.studentId, semesterId: input.semesterId, payload: JSON.stringify(parsed.data), status: "draft", createdBy: ctx.user.id });
+    const analysisId = Number((inserted as unknown as { insertId?: number }).insertId);
+    await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_UPLOADED", entity: "ai_analyses", entityId: String(analysisId) });
+    return { analysisId, status: "draft" } as const;
+  }),
+
+  publish: adminProcedure.input(z.object({ analysisId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+    const found = await db.select().from(aiAnalyses).where(eq(aiAnalyses.id, input.analysisId)).limit(1);
+    if (!found[0]) throw new Error("Analysis not found.");
+    await db.update(aiAnalyses).set({ status: "published", publishedAt: new Date() }).where(eq(aiAnalyses.id, input.analysisId));
+    await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_PUBLISHED", entity: "ai_analyses", entityId: String(input.analysisId) });
+    return { success: true } as const;
+  }),
+
+  archive: adminProcedure.input(z.object({ analysisId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+    await db.update(aiAnalyses).set({ status: "archived" }).where(and(eq(aiAnalyses.id, input.analysisId), eq(aiAnalyses.status, "published")));
+    await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_ARCHIVED", entity: "ai_analyses", entityId: String(input.analysisId) });
+    return { success: true } as const;
+  }),
+});

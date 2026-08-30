@@ -1,0 +1,1 @@
+ALTER TABLE `rankings` ADD `locked` boolean DEFAULT false NOT NULL;
