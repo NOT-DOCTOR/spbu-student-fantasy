@@ -17,6 +17,11 @@ export function validateAnalysisPayload(value: unknown) {
 }
 
 export const analysesRouter = router({
+  list: adminProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+    return db.select({ id: aiAnalyses.id, studentId: aiAnalyses.studentId, semesterId: aiAnalyses.semesterId, payload: aiAnalyses.payload, status: aiAnalyses.status, publishedAt: aiAnalyses.publishedAt }).from(aiAnalyses);
+  }),
   upload: adminProcedure.input(z.object({
     studentId: z.number().int().positive(),
     semesterId: z.number().int().positive().optional(),
@@ -30,6 +35,16 @@ export const analysesRouter = router({
     const analysisId = Number((inserted as unknown as { insertId?: number }).insertId);
     await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_UPLOADED", entity: "ai_analyses", entityId: String(analysisId) });
     return { analysisId, status: "draft" } as const;
+  }),
+
+  replace: adminProcedure.input(z.object({ analysisId: z.number().int().positive(), payloadJson: z.string().min(2) })).mutation(async ({ ctx, input }) => {
+    const parsed = validateAnalysisPayload(JSON.parse(input.payloadJson));
+    if (!parsed.success) throw new Error("Analysis payload must include a title, summary, and structured sections.");
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+    await db.update(aiAnalyses).set({ payload: JSON.stringify(parsed.data) }).where(and(eq(aiAnalyses.id, input.analysisId), eq(aiAnalyses.status, "draft")));
+    await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_REPLACED", entity: "ai_analyses", entityId: String(input.analysisId) });
+    return { success: true } as const;
   }),
 
   publish: adminProcedure.input(z.object({ analysisId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {

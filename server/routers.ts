@@ -1,10 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { privacySettings, scoringConfigs } from "../drizzle/schema";
+import { cohorts, privacySettings, programs, scoringConfigs, semesters, studentAccounts, students, subjects } from "../drizzle/schema";
 import { canViewAcademicData } from "../shared/privacy";
 import { getAppRole, requireAdmin, requireVerifiedStudent } from "./access";
-import { appendAuditLog, getDb, getPrivacySettings, getStudentForUser, getStudentPublishedResults, listAuditLogs, listPublishedRankings } from "./db";
+import { appendAuditLog, getDb, getPrivacySettings, getStudentForUser, getStudentPublishedAnalyses, getStudentPublishedResults, listAuditLogs, listPublishedRankings } from "./db";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -29,12 +29,13 @@ export const appRouter = router({
   academic: router({
     me: protectedProcedure.query(async ({ ctx }) => {
       const role = getAppRole(ctx);
-      if (role === "ADMIN") return { role, student: null, privacy: null, results: [] };
+      if (role === "ADMIN") return { role, student: null, privacy: null, results: [], analyses: [] };
       const { student } = await requireVerifiedStudent(ctx);
       if (!student) throw new TRPCError({ code: "FORBIDDEN", message: "A verified student account is required." });
       const privacy = await getPrivacySettings(student.id);
       const results = await getStudentPublishedResults(student.id);
-      return { role, student, privacy, results };
+      const analyses = await getStudentPublishedAnalyses(student.id);
+      return { role, student, privacy, results, analyses };
     }),
 
     rankings: protectedProcedure.input(z.object({
@@ -93,6 +94,43 @@ export const appRouter = router({
   analyses: analysesRouter,
 
   admin: router({
+    catalog: adminProcedure.query(async ({ ctx }) => {
+      requireAdmin(ctx);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const [programRows, cohortRows, semesterRows, subjectRows, studentRows, links] = await Promise.all([
+        db.select({ id: programs.id, code: programs.code, name: programs.name }).from(programs),
+        db.select({ id: cohorts.id, code: cohorts.code, name: cohorts.name }).from(cohorts),
+        db.select({ id: semesters.id, number: semesters.number, name: semesters.name }).from(semesters),
+        db.select({ id: subjects.id, code: subjects.code, name: subjects.name }).from(subjects),
+        db.select({ id: students.id, studentId: students.studentId, fullName: students.fullName, status: students.status }).from(students),
+        db.select({ studentId: studentAccounts.studentId, userId: studentAccounts.userId, verificationStatus: studentAccounts.verificationStatus }).from(studentAccounts),
+      ]);
+      return { programs: programRows, cohorts: cohortRows, semesters: semesterRows, subjects: subjectRows, students: studentRows, accountLinks: links };
+    }),
+    linkStudentAccount: adminProcedure.input(z.object({ studentId: z.number().int().positive(), userId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const inserted = await db.insert(studentAccounts).values({ studentId: input.studentId, userId: input.userId, verificationStatus: "pending" });
+      const id = Number((inserted as unknown as { insertId?: number }).insertId);
+      await appendAuditLog({ actorUserId: ctx.user.id, action: "STUDENT_ACCOUNT_LINKED", entity: "student_accounts", entityId: String(id), newValue: JSON.stringify(input) });
+      return { id, status: "pending" } as const;
+    }),
+    verifyStudent: adminProcedure.input(z.object({ studentId: z.number().int().positive(), userId: z.number().int().positive(), status: z.enum(["pending", "verified", "revoked"]) })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      await db.update(studentAccounts).set({ verificationStatus: input.status }).where(and(eq(studentAccounts.studentId, input.studentId), eq(studentAccounts.userId, input.userId)));
+      await appendAuditLog({ actorUserId: ctx.user.id, action: "STUDENT_VERIFICATION_UPDATED", entity: "student_accounts", entityId: String(input.studentId), newValue: JSON.stringify(input) });
+      return { success: true } as const;
+    }),
+    createCohort: adminProcedure.input(z.object({ programId: z.number().int().positive(), code: z.string().min(1).max(64), name: z.string().min(1).max(160) })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const inserted = await db.insert(cohorts).values(input);
+      const id = Number((inserted as unknown as { insertId?: number }).insertId);
+      await appendAuditLog({ actorUserId: ctx.user.id, action: "COHORT_CREATED", entity: "cohorts", entityId: String(id), newValue: JSON.stringify(input) });
+      return { id } as const;
+    }),
     auditLogs: adminProcedure.query(async ({ ctx }) => {
       requireAdmin(ctx);
       return listAuditLogs();

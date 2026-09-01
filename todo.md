@@ -65,6 +65,6 @@
 
 - [x] Reapply the authenticated student dashboard wiring and published result analytics after checkpoint recovery
 - [ ] Reapply permission-aware leaderboard, subject analytics, and peer-profile routes after checkpoint recovery
-- [ ] Reapply admin catalog, cohort management, and student-account linking workflows after checkpoint recovery
+- [x] Reapply admin catalog, cohort management, and student-account linking workflows after checkpoint recovery
 - [ ] Reapply structured AI analysis listing, publish, replace, archive, and student rendering after checkpoint recovery
 - [x] Re-run security tests, production build, and responsive previews after recovery changes

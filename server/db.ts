@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
+  aiAnalyses,
   auditLogs,
   InsertUser,
   privacySettings,
@@ -91,6 +92,15 @@ export async function getStudentPublishedResults(studentId: number) {
     .innerJoin(semesters, eq(subjectOfferings.semesterId, semesters.id))
     .where(and(eq(results.studentId, studentId), eq(results.published, true)))
     .orderBy(semesters.number, subjects.code);
+}
+
+export async function getStudentPublishedAnalyses(studentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: aiAnalyses.id, semesterId: aiAnalyses.semesterId, payload: aiAnalyses.payload, publishedAt: aiAnalyses.publishedAt })
+    .from(aiAnalyses)
+    .where(and(eq(aiAnalyses.studentId, studentId), eq(aiAnalyses.status, "published")))
+    .orderBy(desc(aiAnalyses.publishedAt));
 }
 
 export async function getPrivacySettings(studentId: number) {
