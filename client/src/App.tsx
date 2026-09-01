@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import AdminWorkspace from "@/pages/AdminWorkspace";
 import StudentDashboard from "@/pages/StudentDashboard";
+import StudentProfile from "@/pages/StudentProfile";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "./components/DashboardLayout";
@@ -18,6 +19,7 @@ function Router() {
     <Route path="/" component={Home} />
     <Route path="/app">{() => <ProtectedShell><StudentDashboard /></ProtectedShell>}</Route>
     <Route path="/admin">{() => <ProtectedShell><AdminWorkspace /></ProtectedShell>}</Route>
+    <Route path="/profile">{() => <ProtectedShell><StudentProfile /></ProtectedShell>}</Route>
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />
   </Switch>;

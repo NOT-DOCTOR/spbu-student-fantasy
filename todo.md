@@ -18,7 +18,7 @@
 - [x] Build the premium cyberpunk SPBU-branded landing page
 - [ ] Build the authenticated student dashboard with score, rank, movement, trends, form, subjects, achievements, and AI analysis
 - [ ] Build permission-aware leaderboards and subject analytics
-- [ ] Build student profile views with privacy-aware visibility
+- [ ] Build student profile views with privacy-aware visibility (self-profile route complete; peer visibility pending)
 - [ ] Build the admin workspace for students, cohorts, subjects, semesters, scoring, publishing, imports, AI analyses, and audit history
 - [ ] Implement structured pre-generated AI analysis upload, validation, publishing, replacement, and rendering
 - [x] Add responsive mobile, tablet, and desktop layouts
@@ -62,3 +62,9 @@
 - [x] Add tests for ranking snapshot versioning, deterministic ordering, and publication boundaries
 - [x] Add an exact schema verification script comparing expected tables, foreign keys, constraints, indexes, and migration hashes with the live database
 - [x] Document the migration recovery and validation procedure so the Drizzle ledger remains trustworthy
+
+- [x] Reapply the authenticated student dashboard wiring and published result analytics after checkpoint recovery
+- [ ] Reapply permission-aware leaderboard, subject analytics, and peer-profile routes after checkpoint recovery
+- [ ] Reapply admin catalog, cohort management, and student-account linking workflows after checkpoint recovery
+- [ ] Reapply structured AI analysis listing, publish, replace, archive, and student rendering after checkpoint recovery
+- [x] Re-run security tests, production build, and responsive previews after recovery changes
