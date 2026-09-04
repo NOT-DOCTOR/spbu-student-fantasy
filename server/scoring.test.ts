@@ -59,3 +59,19 @@ describe("role and privacy rules", () => {
     expect(canViewAcademicData({ viewerRole: "STUDENT", isSelf: false, settings, field: "rank" })).toBe(false);
   });
 });
+
+
+describe("attempt policy defaults", () => {
+  it("does not apply an attempt-weight modifier in the initial release", () => {
+    const result = calculateFantasyScore({
+      academicScore: 80,
+      improvement: 0,
+      consistency: 80,
+      firstAttemptSuccess: 50,
+      recentForm: 80,
+      config: { improvementWeight: 0, consistencyWeight: 0, firstAttemptWeight: 0, recentFormWeight: 0 },
+    });
+    expect(result.score).toBe(80);
+    expect(result.explanation.positives).not.toContain("First-attempt success");
+  });
+});

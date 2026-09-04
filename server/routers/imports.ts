@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { read, utils } from "xlsx";
 import { z } from "zod";
 import { attempts, importErrors, imports, results, subjectOfferings, subjects, students } from "../../drizzle/schema";
@@ -49,6 +49,11 @@ async function loadImportRows(fileKey: string, fileType: string) {
 }
 
 export const importsRouter = router({
+  list: adminProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+    return db.select({ id: imports.id, fileName: imports.fileName, status: imports.status, totalRows: imports.totalRows, validRows: imports.validRows, errorRows: imports.errorRows, createdAt: imports.createdAt }).from(imports).orderBy(desc(imports.createdAt)).limit(50);
+  }),
   get: adminProcedure.input(z.object({ importId: z.number().int().positive() })).query(async ({ input }) => {
     const db = await getDb();
     if (!db) throw new Error("Database unavailable");

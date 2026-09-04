@@ -4,7 +4,7 @@ import { z } from "zod";
 import { cohorts, privacySettings, programs, scoringConfigs, semesters, studentAccounts, students, subjects } from "../drizzle/schema";
 import { canViewAcademicData } from "../shared/privacy";
 import { getAppRole, requireAdmin, requireVerifiedStudent } from "./access";
-import { appendAuditLog, getDb, getPrivacySettings, getStudentForUser, getStudentPublishedAnalyses, getStudentPublishedResults, listAuditLogs, listPublishedRankings } from "./db";
+import { appendAuditLog, getDb, getPrivacySettings, getStudentForUser, getPeerStudentProfile, getPublishedSubjectAnalytics, getStudentAchievements, getStudentPublishedAnalyses, getStudentPublishedResults, listAuditLogs, listPublishedRankings } from "./db";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -29,13 +29,41 @@ export const appRouter = router({
   academic: router({
     me: protectedProcedure.query(async ({ ctx }) => {
       const role = getAppRole(ctx);
-      if (role === "ADMIN") return { role, student: null, privacy: null, results: [], analyses: [] };
+      if (role === "ADMIN") return { role, student: null, privacy: null, results: [], analyses: [], achievements: [] };
       const { student } = await requireVerifiedStudent(ctx);
       if (!student) throw new TRPCError({ code: "FORBIDDEN", message: "A verified student account is required." });
       const privacy = await getPrivacySettings(student.id);
       const results = await getStudentPublishedResults(student.id);
       const analyses = await getStudentPublishedAnalyses(student.id);
-      return { role, student, privacy, results, analyses };
+      const achievements = await getStudentAchievements(student.id);
+      return { role, student, privacy, results, analyses, achievements };
+    }),
+
+    subjectAnalytics: protectedProcedure.input(z.object({ cohortId: z.number().int().positive(), semesterId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      const viewerRole = getAppRole(ctx);
+      if (viewerRole !== "ADMIN") await requireVerifiedStudent(ctx);
+      const rows = await getPublishedSubjectAnalytics(input.cohortId, input.semesterId);
+      const visible = viewerRole === "ADMIN" ? rows : rows.filter(row => !row.privacy || (!row.privacy.privateMode && row.privacy.showSubjectStats));
+      const grouped = new Map<number, { subjectId: number; code: string; name: string; total: number; passed: number; scoreTotal: number }>();
+      for (const row of visible) {
+        const current = grouped.get(row.subject.id) ?? { subjectId: row.subject.id, code: row.subject.code, name: row.subject.name, total: 0, passed: 0, scoreTotal: 0 };
+        current.total += 1;
+        if (row.result.normalizedResult === "PASS") current.passed += 1;
+        current.scoreTotal += Number(row.result.normalizedScore ?? row.result.percentage ?? 0);
+        grouped.set(row.subject.id, current);
+      }
+      return Array.from(grouped.values()).map(item => ({ ...item, averageScore: item.total ? Math.round((item.scoreTotal / item.total) * 10) / 10 : 0, passRate: item.total ? Math.round((item.passed / item.total) * 100) : 0 }));
+    }),
+
+    profile: protectedProcedure.input(z.object({ studentId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      const target = await getPeerStudentProfile(input.studentId);
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Student profile not found." });
+      const viewerRole = getAppRole(ctx);
+      const viewer = viewerRole === "ADMIN" ? null : await requireVerifiedStudent(ctx);
+      const isSelf = viewer?.student?.id === input.studentId;
+      const settings = target.privacy;
+      if (viewerRole !== "ADMIN" && !isSelf && (!settings || settings.privateMode || !settings.showProfile)) throw new TRPCError({ code: "FORBIDDEN", message: "This profile is private." });
+      return { student: target.student, privacy: isSelf ? settings : null, isSelf };
     }),
 
     rankings: protectedProcedure.input(z.object({
@@ -122,6 +150,22 @@ export const appRouter = router({
       await db.update(studentAccounts).set({ verificationStatus: input.status }).where(and(eq(studentAccounts.studentId, input.studentId), eq(studentAccounts.userId, input.userId)));
       await appendAuditLog({ actorUserId: ctx.user.id, action: "STUDENT_VERIFICATION_UPDATED", entity: "student_accounts", entityId: String(input.studentId), newValue: JSON.stringify(input) });
       return { success: true } as const;
+    }),
+    createSubject: adminProcedure.input(z.object({ code: z.string().min(1).max(64), name: z.string().min(1).max(180), subjectType: z.enum(["EXAM", "PASS_FAIL"]), credits: z.number().nonnegative().optional() })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const inserted = await db.insert(subjects).values({ ...input, credits: input.credits === undefined ? undefined : String(input.credits) });
+      const id = Number((inserted as unknown as { insertId?: number }).insertId);
+      await appendAuditLog({ actorUserId: ctx.user.id, action: "SUBJECT_CREATED", entity: "subjects", entityId: String(id), newValue: JSON.stringify(input) });
+      return { id } as const;
+    }),
+    createSemester: adminProcedure.input(z.object({ name: z.string().min(1).max(100), number: z.number().int().min(1).max(20) })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const inserted = await db.insert(semesters).values(input);
+      const id = Number((inserted as unknown as { insertId?: number }).insertId);
+      await appendAuditLog({ actorUserId: ctx.user.id, action: "SEMESTER_CREATED", entity: "semesters", entityId: String(id), newValue: JSON.stringify(input) });
+      return { id } as const;
     }),
     createCohort: adminProcedure.input(z.object({ programId: z.number().int().positive(), code: z.string().min(1).max(64), name: z.string().min(1).max(160) })).mutation(async ({ ctx, input }) => {
       const db = await getDb();

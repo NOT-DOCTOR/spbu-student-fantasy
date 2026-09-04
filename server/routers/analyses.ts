@@ -16,6 +16,17 @@ export function validateAnalysisPayload(value: unknown) {
   return analysisPayload.safeParse(value);
 }
 
+export function validatePublicationApproval(note: string) {
+  if (note.trim().length < 20) throw new Error("Publication approval note must be at least 20 characters.");
+  return note.trim();
+}
+
+export function assertDraftAnalysis(status: string | undefined) {
+  if (!status) throw new Error("Analysis not found.");
+  if (status !== "draft") throw new Error("Only draft analyses can be replaced.");
+  return true as const;
+}
+
 export const analysesRouter = router({
   list: adminProcedure.query(async () => {
     const db = await getDb();
@@ -42,18 +53,21 @@ export const analysesRouter = router({
     if (!parsed.success) throw new Error("Analysis payload must include a title, summary, and structured sections.");
     const db = await getDb();
     if (!db) throw new Error("Database unavailable");
+    const found = await db.select({ id: aiAnalyses.id, status: aiAnalyses.status }).from(aiAnalyses).where(eq(aiAnalyses.id, input.analysisId)).limit(1);
+    assertDraftAnalysis(found[0]?.status);
     await db.update(aiAnalyses).set({ payload: JSON.stringify(parsed.data) }).where(and(eq(aiAnalyses.id, input.analysisId), eq(aiAnalyses.status, "draft")));
     await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_REPLACED", entity: "ai_analyses", entityId: String(input.analysisId) });
     return { success: true } as const;
   }),
 
-  publish: adminProcedure.input(z.object({ analysisId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+  publish: adminProcedure.input(z.object({ analysisId: z.number().int().positive(), approvalNote: z.string().min(20) })).mutation(async ({ ctx, input }) => {
+    validatePublicationApproval(input.approvalNote);
     const db = await getDb();
     if (!db) throw new Error("Database unavailable");
     const found = await db.select().from(aiAnalyses).where(eq(aiAnalyses.id, input.analysisId)).limit(1);
     if (!found[0]) throw new Error("Analysis not found.");
     await db.update(aiAnalyses).set({ status: "published", publishedAt: new Date() }).where(eq(aiAnalyses.id, input.analysisId));
-    await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_PUBLISHED", entity: "ai_analyses", entityId: String(input.analysisId) });
+    await appendAuditLog({ actorUserId: ctx.user.id, action: "AI_ANALYSIS_PUBLISHED", entity: "ai_analyses", entityId: String(input.analysisId), newValue: JSON.stringify({ approvalNote: input.approvalNote.trim() }) });
     return { success: true } as const;
   }),
 

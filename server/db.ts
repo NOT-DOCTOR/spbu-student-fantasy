@@ -1,11 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
+  achievements,
   aiAnalyses,
   auditLogs,
   InsertUser,
   privacySettings,
   rankings,
+  studentAchievements,
   results,
   subjectOfferings,
   subjects,
@@ -94,6 +96,17 @@ export async function getStudentPublishedResults(studentId: number) {
     .orderBy(semesters.number, subjects.code);
 }
 
+export async function getStudentAchievements(studentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ award: studentAchievements, achievement: achievements, semester: semesters })
+    .from(studentAchievements)
+    .innerJoin(achievements, eq(studentAchievements.achievementId, achievements.id))
+    .leftJoin(semesters, eq(studentAchievements.semesterId, semesters.id))
+    .where(eq(studentAchievements.studentId, studentId))
+    .orderBy(desc(studentAchievements.awardedAt));
+}
+
 export async function getStudentPublishedAnalyses(studentId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -101,6 +114,25 @@ export async function getStudentPublishedAnalyses(studentId: number) {
     .from(aiAnalyses)
     .where(and(eq(aiAnalyses.studentId, studentId), eq(aiAnalyses.status, "published")))
     .orderBy(desc(aiAnalyses.publishedAt));
+}
+
+export async function getPeerStudentProfile(studentId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select({ student: students, privacy: privacySettings }).from(students).leftJoin(privacySettings, eq(privacySettings.studentId, students.id)).where(eq(students.id, studentId)).limit(1);
+  return result[0];
+}
+
+export async function getPublishedSubjectAnalytics(cohortId: number, semesterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ result: results, subject: subjects, student: students, privacy: privacySettings })
+    .from(results)
+    .innerJoin(subjectOfferings, eq(results.subjectOfferingId, subjectOfferings.id))
+    .innerJoin(subjects, eq(subjectOfferings.subjectId, subjects.id))
+    .innerJoin(students, eq(results.studentId, students.id))
+    .leftJoin(privacySettings, eq(privacySettings.studentId, students.id))
+    .where(and(eq(subjectOfferings.cohortId, cohortId), eq(subjectOfferings.semesterId, semesterId), eq(results.published, true)));
 }
 
 export async function getPrivacySettings(studentId: number) {

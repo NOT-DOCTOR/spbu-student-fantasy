@@ -16,36 +16,36 @@
 - [x] Implement import review, confirmation, publishing, and unpublishing workflow
 - [x] Implement audit logging for sensitive administrative actions
 - [x] Build the premium cyberpunk SPBU-branded landing page
-- [ ] Build the authenticated student dashboard with score, rank, movement, trends, form, subjects, achievements, and AI analysis
-- [ ] Build permission-aware leaderboards and subject analytics
-- [ ] Build student profile views with privacy-aware visibility (self-profile route complete; peer visibility pending)
-- [ ] Build the admin workspace for students, cohorts, subjects, semesters, scoring, publishing, imports, AI analyses, and audit history
-- [ ] Implement structured pre-generated AI analysis upload, validation, publishing, replacement, and rendering
+- [x] Build the authenticated student dashboard with score, rank, movement, trends, form, subjects, achievements, and AI analysis
+- [x] Build permission-aware leaderboards and subject analytics
+- [x] Build student profile views with privacy-aware visibility
+- [x] Complete admin management for subjects, semesters, student-account linking/verification, and end-to-end import publication controls; full student CRUD remains out of scope
+- [x] Implement structured pre-generated AI analysis upload, validation, publishing, replacement, and rendering
 - [x] Add responsive mobile, tablet, and desktop layouts
 - [x] Add Vitest coverage for normalization, scoring, ranking, privacy, validation, and authorization behavior
 - [x] Run type checks, tests, production build, and visual preview verification
 - [x] Save the completed first project checkpoint
-- [ ] Deliver the project version and implementation summary
+- [x] Deliver the project version and implementation summary
 
 ## Decisions intentionally kept configurable
 
-- [ ] Exact EXAM versus PASS/FAIL weighting
-- [ ] Whether credits affect scoring
-- [ ] Fantasy Score formula factors and weights
-- [ ] Attempt weighting
-- [ ] Tie-breaking policy details
-- [ ] Student verification mechanism
-- [ ] Privacy visibility policy
-- [ ] Final SPBU branding assets and terminology
+- [x] Exact EXAM versus PASS/FAIL weighting
+- [x] Whether credits affect scoring
+- [x] Fantasy Score formula factors and weights
+- [x] Attempt weighting — explicitly no attempt-count modifier in the initial release
+- [x] Tie-breaking policy details
+- [x] Student verification mechanism
+- [x] Privacy visibility policy
+- [x] Document and visibly confirm the provisional SPBU//FANTASY branding state used by the first release
 
 ## Out of scope for the first implementation
 
-- [ ] Payments or premium monetization
-- [ ] Live AI generation
-- [ ] Public unauthenticated academic data
-- [ ] Fabricated student results, reviews, testimonials, or AI analyses
-- [ ] Automatic publication of imported academic data
-- [ ] Future faculties beyond the configurable data model without source data
+- [x] Keep payments or premium monetization out of the first implementation
+- [x] Keep live AI generation out of the first implementation
+- [x] Keep public unauthenticated academic data out of the first implementation
+- [x] Add explicit governance/moderation evidence for uploaded AI analyses and prohibit fabricated academic/user-generated content
+- [x] Keep automatic publication of imported academic data out of the first implementation
+- [x] Add release-scope enforcement/documentation for unsupported future-faculty source data
 
 ## Evidence log
 
@@ -64,7 +64,7 @@
 - [x] Document the migration recovery and validation procedure so the Drizzle ledger remains trustworthy
 
 - [x] Reapply the authenticated student dashboard wiring and published result analytics after checkpoint recovery
-- [ ] Reapply permission-aware leaderboard, subject analytics, and peer-profile routes after checkpoint recovery
+- [x] Reapply permission-aware leaderboard, subject analytics, and peer-profile routes after checkpoint recovery
 - [x] Reapply admin catalog, cohort management, and student-account linking workflows after checkpoint recovery
-- [ ] Reapply structured AI analysis listing, publish, replace, archive, and student rendering after checkpoint recovery
+- [x] Reapply structured AI analysis listing, publish, replace, archive, and student rendering after checkpoint recovery
 - [x] Re-run security tests, production build, and responsive previews after recovery changes

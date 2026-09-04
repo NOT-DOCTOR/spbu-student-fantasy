@@ -1,0 +1,5 @@
+# Content governance and integrity boundary
+
+SPBU Student Fantasy does not generate or invent academic results, testimonials, reviews, or AI analyses. Structured analyses enter only through an administrator-authored upload, are validated against the required title, summary, and section schema, remain in `draft` state, and require explicit administrator publication. Published analyses can be archived; draft replacements are allowed only while the record remains in draft state. Every upload, replacement, publication, and archive action is written to the audit log.
+
+The platform’s source-of-truth for academic values is the reviewed CSV/XLSX/JSON import and its retained external file reference. Raw source values remain stored alongside normalized values. Results are not visible to student procedures until an administrator confirms and publishes the import. A future moderation queue may add human review metadata; until then, the explicit administrator review boundary is the release control.
