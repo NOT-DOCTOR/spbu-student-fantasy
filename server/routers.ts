@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like, or } from "drizzle-orm";
 import { z } from "zod";
 import { cohorts, privacySettings, programs, scoringConfigs, semesters, studentAccounts, students, subjects } from "../drizzle/schema";
 import { canViewAcademicData } from "../shared/privacy";
+import { createStudentInput, studentSearchInput, updateStudentInput } from "../shared/studentAdmin";
 import { getAppRole, requireAdmin, requireVerifiedStudent } from "./access";
 import { appendAuditLog, getDb, getPrivacySettings, getStudentForUser, getPeerStudentProfile, getPublishedSubjectAnalytics, getStudentAchievements, getStudentPublishedAnalyses, getStudentPublishedResults, listAuditLogs, listPublishedRankings } from "./db";
 import { COOKIE_NAME } from "@shared/const";
@@ -122,6 +123,32 @@ export const appRouter = router({
   analyses: analysesRouter,
 
   admin: router({
+    students: adminProcedure.input(studentSearchInput).query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const filters = [];
+      if (input?.status) filters.push(eq(students.status, input.status));
+      if (input?.search) filters.push(or(like(students.studentId, `%${input.search}%`), like(students.fullName, `%${input.search}%`)));
+      return db.select({ id: students.id, studentId: students.studentId, fullName: students.fullName, facultyId: students.facultyId, programId: students.programId, cohortId: students.cohortId, currentSemesterId: students.currentSemesterId, status: students.status, createdAt: students.createdAt, updatedAt: students.updatedAt }).from(students).where(filters.length ? and(...filters) : undefined).orderBy(students.fullName).limit(200);
+    }),
+    createStudent: adminProcedure.input(createStudentInput).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const inserted = await db.insert(students).values(input);
+      const id = Number((inserted as unknown as { insertId?: number }).insertId);
+      await appendAuditLog({ actorUserId: ctx.user.id, action: "STUDENT_CREATED", entity: "students", entityId: String(id), newValue: JSON.stringify(input) });
+      return { id } as const;
+    }),
+    updateStudent: adminProcedure.input(updateStudentInput).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable." });
+      const [before] = await db.select().from(students).where(eq(students.id, input.id)).limit(1);
+      if (!before) throw new TRPCError({ code: "NOT_FOUND", message: "Student record not found." });
+      const { id, ...changes } = input;
+      await db.update(students).set(changes).where(eq(students.id, id));
+      await appendAuditLog({ actorUserId: ctx.user.id, action: "STUDENT_UPDATED", entity: "students", entityId: String(id), oldValue: JSON.stringify(before), newValue: JSON.stringify(changes) });
+      return { success: true } as const;
+    }),
     catalog: adminProcedure.query(async ({ ctx }) => {
       requireAdmin(ctx);
       const db = await getDb();

@@ -50,8 +50,8 @@
   --card-foreground: oklch(0.94 0.02 200);
   --popover: oklch(0.13 0.018 280);
   --popover-foreground: oklch(0.94 0.02 200);
-  --primary: oklch(0.75 0.28 348);
-  --primary-foreground: oklch(0.12 0.03 340);
+  --primary: oklch(0.57 0.19 35);
+  --primary-foreground: oklch(0.98 0.01 35);
   --secondary: oklch(0.16 0.02 260);
   --secondary-foreground: oklch(0.82 0.04 200);
   --muted: oklch(0.17 0.02 275);
@@ -64,14 +64,14 @@
   --input: oklch(0.25 0.04 285);
   --ring: oklch(0.78 0.19 195);
   --chart-1: oklch(0.78 0.19 195);
-  --chart-2: oklch(0.75 0.28 348);
+  --chart-2: oklch(0.57 0.19 35);
   --chart-3: oklch(0.76 0.2 125);
   --chart-4: oklch(0.72 0.2 285);
   --chart-5: oklch(0.78 0.16 55);
   --sidebar: oklch(0.08 0.012 280);
   --sidebar-foreground: oklch(0.9 0.03 210);
-  --sidebar-primary: oklch(0.75 0.28 348);
-  --sidebar-primary-foreground: oklch(0.98 0.01 340);
+  --sidebar-primary: oklch(0.57 0.19 35);
+  --sidebar-primary-foreground: oklch(0.98 0.01 35);
   --sidebar-accent: oklch(0.17 0.03 280);
   --sidebar-accent-foreground: oklch(0.88 0.06 200);
   --sidebar-border: oklch(0.35 0.09 300 / 45%);
@@ -99,6 +99,8 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]), a[href], sel
   .hud-card::before { top: 0; left: 0; border-top: 1px solid #69f1ff; border-left: 1px solid #69f1ff; }
   .hud-card::after { right: 0; bottom: 0; border-right: 1px solid #ff33a6; border-bottom: 1px solid #ff33a6; }
   .neon-pink { color: #ff5db8; text-shadow: 0 0 20px rgba(255,51,166,.65); }
+  .institutional-red { color: #da532c; }
+  .institutional-rule { background: linear-gradient(90deg, transparent, rgba(218,83,44,.75), rgba(255,255,255,.35), transparent); }
   .neon-cyan { color: #69f1ff; text-shadow: 0 0 20px rgba(105,241,255,.55); }
   .display-font { font-family: "Orbitron", "Space Grotesk", sans-serif; }
   .eyebrow { @apply text-[10px] font-bold uppercase tracking-[0.28em]; color: #69f1ff; }
