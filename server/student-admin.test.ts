@@ -26,6 +26,10 @@ describe("student administration input contracts", () => {
     expect(() => updateStudentInput.parse({ id: 1, studentId: "SP-001", fullName: "Name", facultyId: 1, programId: 2, cohortId: 3, status: "pending" })).toThrow();
   });
 
+  it("accepts graduated as an explicit archival status", () => {
+    expect(updateStudentInput.parse({ id: 1, studentId: "SP-001", fullName: "Name", facultyId: 1, programId: 2, cohortId: 3, currentSemesterId: null, status: "graduated" }).status).toBe("graduated");
+  });
+
   it("accepts bounded search filters only", () => {
     expect(studentSearchInput.parse({ search: "  SP-001  ", status: "disabled" })).toEqual({ search: "SP-001", status: "disabled" });
     expect(() => studentSearchInput.parse({ search: "x".repeat(121) })).toThrow();

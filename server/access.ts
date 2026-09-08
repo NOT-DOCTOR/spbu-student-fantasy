@@ -27,8 +27,8 @@ export async function requireVerifiedStudent(ctx: TrpcContext) {
     .where(eq(studentAccounts.userId, ctx.user.id))
     .limit(1);
   const match = rows[0];
-  if (!match || match.account.verificationStatus !== "verified" || match.student.status === "disabled") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "A verified student account is required for academic data." });
+  if (!match || match.account.verificationStatus !== "verified" || match.student.status === "disabled" || match.student.status === "graduated") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "A verified active student account is required for academic data." });
   }
   return { user: ctx.user, student: match.student };
 }
