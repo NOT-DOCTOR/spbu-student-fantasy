@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/db.php';
 require __DIR__ . '/auth.php';
+require __DIR__ . '/academic.php';
 
 $path = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
 $path = preg_replace('#^api(?:/php)?/?#', '', $path) ?? $path;
@@ -43,6 +44,18 @@ if ($path === 'auth/login') {
     }
     login_user($config, $pdo, (int)$candidate['id']);
     json_response(['success' => true, 'user' => current_user($config, $pdo)]);
+}
+
+if ($path === 'academic/me') {
+    academic_me($config, $pdo);
+}
+
+if ($path === 'privacy/get') {
+    privacy_get($config, $pdo);
+}
+
+if ($path === 'privacy/update') {
+    privacy_update($config, $pdo);
 }
 
 json_response(['error' => 'Not found'], 404);

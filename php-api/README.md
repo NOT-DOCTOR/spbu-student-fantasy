@@ -8,6 +8,9 @@ This directory is the first migration step for InfinityFree-compatible hosting. 
 - `GET /api/php/auth/me` — returns the current PHP session user or `null`.
 - `POST /api/php/auth/login` — local email/password login after the database migration is applied.
 - `POST /api/php/auth/logout` — destroys the PHP session.
+- `GET /api/php/academic/me` — returns the verified active student's profile and published academic data.
+- `GET /api/php/privacy/get` — returns the verified student's privacy settings.
+- `POST /api/php/privacy/update` — updates privacy settings and writes an audit record.
 
 ## Setup
 
@@ -17,4 +20,4 @@ This directory is the first migration step for InfinityFree-compatible hosting. 
 4. Back up the database before applying `migrations/001_add_local_auth.sql`.
 5. Use `password_hash()` / `password_verify()` for local credentials.
 
-This is scaffolding only. The complete student, ranking, privacy, admin, import, and OAuth API has not been migrated yet. The Node application remains the reference implementation until each PHP feature has parity tests.
+The student academic read path and privacy settings are now the first migrated feature slice. The complete ranking, admin, import, and OAuth API has not been migrated yet. The Node application remains the reference implementation until each PHP feature has parity tests.
