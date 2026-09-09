@@ -6,6 +6,7 @@ require __DIR__ . '/db.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/academic.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/rankings.php';
 
 $path = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
 $path = preg_replace('#^api(?:/php)?/?#', '', $path) ?? $path;
@@ -72,6 +73,14 @@ $adminRoutes = [
 ];
 if (isset($adminRoutes[$path])) {
     $adminRoutes[$path]($config, $pdo);
+}
+
+if ($path === 'academic/rankings') {
+    academic_rankings($config, $pdo);
+}
+
+if ($path === 'admin/rankings/snapshot') {
+    admin_create_ranking_snapshot($config, $pdo);
 }
 
 json_response(['error' => 'Not found'], 404);

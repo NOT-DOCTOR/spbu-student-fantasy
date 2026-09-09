@@ -20,6 +20,8 @@ This directory is the first migration step for InfinityFree-compatible hosting. 
 - `POST /api/php/admin/subjects/create` — creates a subject.
 - `POST /api/php/admin/semesters/create` — creates a semester.
 - `POST /api/php/admin/cohorts/create` — creates a cohort.
+- `GET /api/php/academic/rankings?cohortId=...&semesterId=...&rankingType=...` — returns published rows visible to the verified student.
+- `POST /api/php/admin/rankings/snapshot` — creates a deterministic ranking snapshot; published snapshots can be locked.
 
 ## Setup
 
