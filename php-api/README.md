@@ -22,6 +22,8 @@ This directory is the first migration step for InfinityFree-compatible hosting. 
 - `POST /api/php/admin/cohorts/create` — creates a cohort.
 - `GET /api/php/academic/rankings?cohortId=...&semesterId=...&rankingType=...` — returns published rows visible to the verified student.
 - `POST /api/php/admin/rankings/snapshot` — creates a deterministic ranking snapshot; published snapshots can be locked.
+- `GET /api/php/admin/scoring-configs` — lists scoring configurations for admins.
+- `POST /api/php/admin/scoring-configs/create` — creates an inactive scoring configuration.
 
 ## Setup
 

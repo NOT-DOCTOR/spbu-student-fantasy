@@ -7,6 +7,7 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/academic.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/rankings.php';
+require __DIR__ . '/scoring.php';
 
 $path = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
 $path = preg_replace('#^api(?:/php)?/?#', '', $path) ?? $path;
@@ -81,6 +82,14 @@ if ($path === 'academic/rankings') {
 
 if ($path === 'admin/rankings/snapshot') {
     admin_create_ranking_snapshot($config, $pdo);
+}
+
+if ($path === 'admin/scoring-configs') {
+    scoring_configs($config, $pdo);
+}
+
+if ($path === 'admin/scoring-configs/create') {
+    admin_create_scoring_config($config, $pdo);
 }
 
 json_response(['error' => 'Not found'], 404);
