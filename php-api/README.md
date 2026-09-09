@@ -11,6 +11,15 @@ This directory is the first migration step for InfinityFree-compatible hosting. 
 - `GET /api/php/academic/me` — returns the verified active student's profile and published academic data.
 - `GET /api/php/privacy/get` — returns the verified student's privacy settings.
 - `POST /api/php/privacy/update` — updates privacy settings and writes an audit record.
+- `GET /api/php/admin/catalog` — returns catalog and account-link data for admins.
+- `GET /api/php/admin/students` — searches student records for admins.
+- `POST /api/php/admin/students/create` — creates a student record and audit event.
+- `POST /api/php/admin/students/update` — updates a student record and audit event.
+- `POST /api/php/admin/students/link` — creates a pending student-account link.
+- `POST /api/php/admin/students/verify` — changes a link to pending, verified, or revoked.
+- `POST /api/php/admin/subjects/create` — creates a subject.
+- `POST /api/php/admin/semesters/create` — creates a semester.
+- `POST /api/php/admin/cohorts/create` — creates a cohort.
 
 ## Setup
 
