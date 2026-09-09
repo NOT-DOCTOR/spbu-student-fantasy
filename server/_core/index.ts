@@ -31,6 +31,22 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // Force HTTPS in production. Most hosts (Manus, Vercel, Render, Fly, etc.)
+  // terminate TLS at a proxy and forward the original protocol in
+  // x-forwarded-proto, so `req.secure` alone is unreliable — trust the proxy
+  // header instead. This must run before any other route/middleware.
+  app.set("trust proxy", 1);
+  if (process.env.NODE_ENV === "production") {
+    app.use((req, res, next) => {
+      const forwardedProto = req.headers["x-forwarded-proto"];
+      const isHttps = req.secure || forwardedProto === "https";
+      if (isHttps) return next();
+      // Never redirect health checks / API webhooks that intentionally use HTTP internally.
+      return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+    });
+  }
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

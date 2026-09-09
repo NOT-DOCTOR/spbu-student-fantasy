@@ -5,9 +5,12 @@ import AdminWorkspace from "@/pages/AdminWorkspace";
 import StudentDashboard from "@/pages/StudentDashboard";
 import StudentProfile from "@/pages/StudentProfile";
 import PeerProfile from "@/pages/PeerProfile";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import Terms from "@/pages/Terms";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "./components/DashboardLayout";
+import CookieConsent from "./components/CookieConsent";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 
@@ -18,6 +21,8 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
 function Router() {
   return <Switch>
     <Route path="/" component={Home} />
+    <Route path="/privacy" component={PrivacyPolicy} />
+    <Route path="/terms" component={Terms} />
     <Route path="/app">{() => <ProtectedShell><StudentDashboard /></ProtectedShell>}</Route>
     <Route path="/admin">{() => <ProtectedShell><AdminWorkspace /></ProtectedShell>}</Route>
     <Route path="/profile">{() => <ProtectedShell><StudentProfile /></ProtectedShell>}</Route>
@@ -33,6 +38,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <CookieConsent />
       </TooltipProvider>
     </ThemeProvider>
   </ErrorBoundary>;

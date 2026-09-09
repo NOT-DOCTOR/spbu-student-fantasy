@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+Disallow: /app
+Disallow: /admin
+Disallow: /profile
+Disallow: /api/
+
+Sitemap: https://spbu.is-great.net/sitemap.xml

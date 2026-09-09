@@ -3,6 +3,7 @@ import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
+import { createRateLimiter } from "./rateLimit";
 import { sdk } from "./sdk";
 
 function getQueryParam(req: Request, key: string): string | undefined {
@@ -10,8 +11,14 @@ function getQueryParam(req: Request, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+// The OAuth callback is the one unauthenticated route that does real work
+// (network calls + a DB write) per hit, so it's the one worth rate limiting
+// first. 20 attempts/minute/IP comfortably covers a real user retrying a
+// failed login while blocking scripted abuse.
+const oauthCallbackLimiter = createRateLimiter({ windowMs: 60_000, max: 20, message: "Too many login attempts. Please wait a minute and try again." });
+
 export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+  app.get("/api/oauth/callback", oauthCallbackLimiter, async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
 

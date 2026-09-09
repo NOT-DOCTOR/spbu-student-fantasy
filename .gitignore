@@ -14,6 +14,9 @@ build/
 .env.test.local
 .env.production.local
 
+# PHP server-only configuration
+php-api/config.php
+
 # IDE and editor files
 .vscode/
 .idea/

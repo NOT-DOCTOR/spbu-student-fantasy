@@ -1,0 +1,11 @@
+RewriteEngine On
+RewriteBase /api/php/
+
+# Keep server-only configuration inaccessible if accidentally uploaded nearby.
+<FilesMatch "^(config\.php|.*\.sql)$">
+    Require all denied
+</FilesMatch>
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L,QSA]
